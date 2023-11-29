@@ -9,12 +9,10 @@ client = get_openai_client()
 if not os.path.exists(agents_path) or not os.path.isdir(agents_path) or not os.listdir(agents_path):
     raise ValueError('The "agents" folder is missing, not a directory, or empty.')
 
-existing_assistants = {}
-
-for assistant in  client.beta.assistants.list(limit=100):
-    existing_assistants[assistant.name] = assistant
-
-
+existing_assistants = {
+    assistant.name: assistant
+    for assistant in client.beta.assistants.list(limit=100)
+}
 # Iterate over each folder inside the 'agents' folder
 for agent_name in os.listdir(agents_path):
     agent_folder = os.path.join(agents_path, agent_name)
@@ -72,9 +70,9 @@ for agent_name in os.listdir(agents_path):
             update_model = existing_agent.model != settings["model"]
             update_instructions = existing_agent.instructions != instructions
             #need to evaluate tools
-            
+
             update_params = {}
-            
+
             requested_files_set = set(requested_files)
             existing_files_set = set(existing_files.keys())
 
@@ -83,22 +81,22 @@ for agent_name in os.listdir(agents_path):
             if update_instructions:
                 update_params["instructions"] = instructions
             if files or requested_files_set != existing_files_set:
-               retained_set = existing_files_set.intersection(requested_files_set)
-               all_file_ids = []
-               for key in retained_set:
-                   all_file_ids.append(existing_files[key].id)
-               all_file_ids += list(map(lambda x: x['id'], files))
-               update_params['file_ids'] = all_file_ids
-               if not any( tool.type == "retrieval" for tool in existing_agent.tools):
-                  update_params['tools'] = existing_agent.tools
-                  update_params['tools'].append({'type': 'retrieval'})
+                retained_set = existing_files_set.intersection(requested_files_set)
+                all_file_ids = [existing_files[key].id for key in retained_set]
+                all_file_ids += list(map(lambda x: x['id'], files))
+                update_params['file_ids'] = all_file_ids
+                if all(
+                    tool.type != "retrieval" for tool in existing_agent.tools
+                ):
+                    update_params['tools'] = existing_agent.tools
+                    update_params['tools'].append({'type': 'retrieval'})
 
-            if len(update_params) != 0:
+            if update_params:
                 print(f"Updating {agent_name}'s { ','.join(update_params.keys()) }") 
                 update_params['assistant_id'] = existing_agent.id
                 assistant = client.beta.assistants.update(**update_params)
             else:
-              print(f"{agent_name} is up to date")         
+                print(f"{agent_name} is up to date")
         else:        
 
             create_params = {

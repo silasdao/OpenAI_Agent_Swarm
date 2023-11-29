@@ -161,7 +161,7 @@ class ChatManager:
                     print(run)
                     print(call)
                     print(responses)
-            if run.status == "failed" or run.status == "expired":
+            if run.status in ["failed", "expired"]:
                 print("DIED")
                 run.status = "completed"
         response = (

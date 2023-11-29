@@ -43,7 +43,7 @@ class AssistantManager:
 
     def get_assistant(self):
         """Retrieve or create an assistant for testing this functionality"""
-        if not self.assistant_package["name"] in [
+        if self.assistant_package["name"] not in [
             assistant.name for assistant in self.client.beta.assistants.list()
         ]:
             assistant = self.make_tool_creation_assistant()
@@ -61,7 +61,7 @@ class AssistantManager:
     def get_coding_assistant(self):
         """Retrieve or create an assistant for testing this functionality"""
         name = "temporary_function_writer"
-        if not name in [
+        if name not in [
             assistant.name for assistant in self.client.beta.assistants.list()
         ]:
             assistant = self.make_coding_assistant()
@@ -82,22 +82,20 @@ class AssistantManager:
                 json.loads(AssistantManager.request_function_tool)
             )
         ]
-        assistant = self.client.beta.assistants.create(
+        return self.client.beta.assistants.create(
             model=self.assistant_package["model"],
             description=self.assistant_package["description"],
             instructions=self.assistant_package["instructions"],
             name=self.assistant_package["name"],
             tools=tools,
         )
-        return assistant
 
     def make_coding_assistant(self):
-        code_assistant = self.client.beta.assistants.create(
+        return self.client.beta.assistants.create(
             model="gpt-4-1106-preview",
             instructions="you will be provided a json schema of an OpenAI function tool from an API not a human user. The json will contain all information about the function you will need to write it in python code. You will return only the python function you wrote and no additional text as you are talking to an API and extraneous output will cause execution errors. You must always implement the actual code. Generic placeholders or pseudo code will break the api. If you need clarification to write real functioning code, request for extra info in arguments without creating a real function or valid schema",
             name="temporary_function_writer",
         )
-        return code_assistant
 
 
 if __name__ == "__main__":

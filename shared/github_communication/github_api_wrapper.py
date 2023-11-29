@@ -62,8 +62,7 @@ class GithubAPIWrapper:
                 f"File {file_path} not found in repository. Please check the file path."
             )
         file = self.repository.get_contents(file_path, ref=branch_name)
-        content = file.decoded_content.decode("utf-8")
-        return content
+        return file.decoded_content.decode("utf-8")
 
     def create_file(
         self, file_path: str, file_content: str, commit_message: str, branch_name: str
@@ -78,10 +77,9 @@ class GithubAPIWrapper:
             branch_name: Name of the branch.
         """
 
-        response = self.repository.create_file(
+        return self.repository.create_file(
             file_path, commit_message, file_content, branch=branch_name
         )
-        return response
 
     def update_file(
         self, file_path: str, file_content: str, commit_message: str, branch_name: str
@@ -102,10 +100,9 @@ class GithubAPIWrapper:
             )
 
         file = self.repository.get_contents(file_path, ref=branch_name)
-        response = self.repository.update_file(
+        return self.repository.update_file(
             file_path, commit_message, file_content, file.sha, branch=branch_name
         )
-        return response
 
     def delete_file(
         self, file_path: str, commit_message: str, branch_name: str
@@ -125,10 +122,9 @@ class GithubAPIWrapper:
             )
 
         file = self.repository.get_contents(file_path, ref=branch_name)
-        response = self.repository.delete_file(
+        return self.repository.delete_file(
             file_path, commit_message, file.sha, branch=branch_name
         )
-        return response
 
     def get_branches(self) -> list[str]:
         """
@@ -160,11 +156,10 @@ class GithubAPIWrapper:
                     f"Branch {branch_name} already exists. Please choose another branch name."
                 )
 
-        response = self.repository.create_git_ref(
+        return self.repository.create_git_ref(
             ref=f"refs/heads/{branch_name}",
             sha=self.repository.get_branch(from_branch).commit.sha,
         )
-        return response
 
     def delete_branch(self, branch_name: str) -> requests.Response:
         """
@@ -179,8 +174,7 @@ class GithubAPIWrapper:
                 f"Branch {branch_name} does not exist. Please choose another branch name."
             )
 
-        response = self.repository.get_git_ref(f"heads/{branch_name}").delete()
-        return response
+        return self.repository.get_git_ref(f"heads/{branch_name}").delete()
 
     def get_pull_requests(self, state: str = "open") -> list[requests.Response]:
         """
@@ -193,8 +187,7 @@ class GithubAPIWrapper:
             List of numbers of pull requests.
         """
         pull_requests = self.repository.get_pulls(state=state)
-        pull_requests_numbers = [pull_request.number for pull_request in pull_requests]
-        return pull_requests_numbers
+        return [pull_request.number for pull_request in pull_requests]
 
     def create_pull_request(
         self,
@@ -220,10 +213,9 @@ class GithubAPIWrapper:
                 f"Branch {head} does not exist. Please choose another branch name."
             )
 
-        response = self.repository.create_pull(
+        return self.repository.create_pull(
             title=title, body=body, head=head, base=base, draft=draft
         )
-        return response
 
     def get_pull_request(self, pull_request_number: int) -> requests.Response:
         """
@@ -236,8 +228,7 @@ class GithubAPIWrapper:
             Pull request.
         """
 
-        pull_request = self.repository.get_pull(pull_request_number)
-        return pull_request
+        return self.repository.get_pull(pull_request_number)
 
     def update_pull_request(
         self, pull_request_number: int, title: str, body: str
@@ -252,8 +243,7 @@ class GithubAPIWrapper:
         """
 
         pull_request = self.get_pull_request(pull_request_number)
-        response = pull_request.edit(title=title, body=body)
-        return response
+        return pull_request.edit(title=title, body=body)
 
     def merge_pull_request(self, pull_request_number: int) -> requests.Response:
         """
@@ -271,8 +261,7 @@ class GithubAPIWrapper:
                 f"Pull request {pull_request_number} cannot be merged. Please check the pull request."
             )
 
-        response = pull_request.merge()
-        return response
+        return pull_request.merge()
 
     def comment_on_pull_request(self, pull_request_number: int, comment: str) -> None:
         """
@@ -284,9 +273,7 @@ class GithubAPIWrapper:
         """
 
         pull_request = self.get_pull_request(pull_request_number)
-        response = pull_request.create_issue_comment(comment)
-
-        return response
+        return pull_request.create_issue_comment(comment)
 
     def close_pull_request(self, pull_request_number: int) -> requests.Response:
         """
@@ -297,8 +284,7 @@ class GithubAPIWrapper:
         """
 
         pull_request = self.get_pull_request(pull_request_number)
-        response = pull_request.edit(state="closed")
-        return response
+        return pull_request.edit(state="closed")
 
     def get_issues(self, state: str = "open") -> list[requests.Response]:
         """
@@ -312,8 +298,7 @@ class GithubAPIWrapper:
         """
 
         issues = self.repository.get_issues(state=state)
-        issues_numbers = [issue.number for issue in issues]
-        return issues_numbers
+        return [issue.number for issue in issues]
 
     def create_issue(
         self,
@@ -331,11 +316,10 @@ class GithubAPIWrapper:
             labels: List of labels. Default is None.
         """
 
-        response = self.repository.create_issue(
+        return self.repository.create_issue(
             title=title,
             body=body,
         )
-        return response
 
     def get_issue(self, issue_number: int) -> requests.Response:
         """
@@ -348,8 +332,7 @@ class GithubAPIWrapper:
             Issue.
         """
 
-        issue = self.repository.get_issue(issue_number)
-        return issue
+        return self.repository.get_issue(issue_number)
 
     def update_issue(self, issue_number: int, title: str, body: str) -> None:
         """
@@ -385,5 +368,4 @@ class GithubAPIWrapper:
         """
 
         issue = self.get_issue(issue_number)
-        response = issue.create_comment(comment)
-        return response
+        return issue.create_comment(comment)

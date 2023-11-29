@@ -100,14 +100,14 @@ def resolveTask(agent, workerOutputs, action, arguments):
     
 def handleThreadForAgent(agent):
     messages = []
-    
+
     print(f"[{agent['name']}] Id: {agent['id']}")
     if 'talksTo' in agent:
         print(f"[{agent['name']}] Talks to: {agent['talksTo']}")
-    
-    thread = client.beta.threads.create()    
+
+    thread = client.beta.threads.create()
     print(f"[{agent['name']}] Thread {thread.id}")
-    
+
     print("")
     queue = queues[agent['name']]
     waitingForMessages = True
@@ -134,16 +134,15 @@ def handleThreadForAgent(agent):
                 run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
                 if run.status == 'completed':
                     waitingForMessages = True
-                    
+
                     message_list = client.beta.threads.messages.list(
                         thread_id=thread.id
                     )
                     retrievedMessages = []
                     for datum in message_list.data:
-                        for content in datum.content:
-                            retrievedMessages.append(content.text.value)            
+                        retrievedMessages.extend(content.text.value for content in datum.content)
                     retrievedMessages.reverse()
-                
+
                     i = len(messages)
                     while i < len(retrievedMessages):
                         retrievedMessage=retrievedMessages[i]
@@ -151,27 +150,27 @@ def handleThreadForAgent(agent):
                         print(f"[{agent['name']}] Message: {retrievedMessage}")
                         i+=1
                 elif run.status == 'requires_action':
-                    outputs = []
                     submitOutput=True
+                    outputs = []
                     for action in run.required_action.submit_tool_outputs.tool_calls:
                         function_name = action.function.name
                         arguments = json.loads(action.function.arguments)
-                        if function_name == 'sendMessage':
-                            processSendMessage(agent, outputs, action, arguments)
+                        if function_name == 'assignTask':
+                            assignTask(agent, arguments, action.id, thread.id, run.id)
+                            submitOutput=False
                         elif function_name == 'broadcast':
                             broadcast(agent, outputs, action, arguments)
-                        elif function_name == 'assignTask':
-                            assignTask(agent, arguments, action.id, thread.id, run.id)                        
-                            submitOutput=False
                         elif function_name == 'resolveTask':
                             resolveTask(agent, outputs, action, arguments)
+                        elif function_name == 'sendMessage':
+                            processSendMessage(agent, outputs, action, arguments)
                         else:
                             print(f"[{agent['name']}] ERROR unkown function {function_name}")
                             outputs.append({
                                 "tool_call_id": action.id,
                                 "output": "Unkown function"
                                 })
-                        
+
                         if submitOutput:
                             client.beta.threads.runs.submit_tool_outputs(
                                 thread_id=thread.id,

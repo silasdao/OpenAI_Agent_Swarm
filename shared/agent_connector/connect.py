@@ -21,14 +21,14 @@ messageQueue = []
 
 def handleThreadForAgent(agent):
     messages = []
-    
+
     print(f"[{agent['name']}] Id: {agent['id']}")
     if 'talksTo' in agent:
         print(f"[{agent['name']}] Talks to: {agent['talksTo']}")
-    
-    thread = client.beta.threads.create()    
+
+    thread = client.beta.threads.create()
     print(f"[{agent['name']}] Thread {thread.id}")
-    
+
     print("")
     queue = queues[agent['name']]
     waitingForMessages = True
@@ -54,16 +54,15 @@ def handleThreadForAgent(agent):
             run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
             if run.status == 'completed':
                 waitingForMessages = True
-                
+
                 message_list = client.beta.threads.messages.list(
                     thread_id=thread.id
                 )
                 retrievedMessages = []
                 for datum in message_list.data:
-                    for content in datum.content:
-                        retrievedMessages.append(content.text.value)            
+                    retrievedMessages.extend(content.text.value for content in datum.content)
                 retrievedMessages.reverse()
-            
+
                 i = len(messages)
                 while i < len(retrievedMessages):
                     retrievedMessage=retrievedMessages[i]
@@ -74,7 +73,7 @@ def handleThreadForAgent(agent):
                             print(f"[{agent['name']}] Sending message to {downstreamAgent}")
                             queues[downstreamAgent].put(retrievedMessage)
                     print("")
-                    i+=1     
+                    i+=1
         time.sleep(1)
 
 queues = {}
